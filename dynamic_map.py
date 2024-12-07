@@ -3,11 +3,20 @@ import pandas as pd
 import geopandas as gpd
 import folium
 from streamlit_folium import st_folium
+import gdown
+
+# Download the dataset from Google Drive
+@st.cache_data
+def download_data():
+    file_id = "1eYTqmer7-FVjU8NgkjrUM5cyhsazIRsc"
+    url = f"https://drive.google.com/uc?id={file_id}"
+    output = "Final_dataset.csv"
+    gdown.download(url, output, quiet=False)
+    return pd.read_csv(output)
 
 # Load the data
-data_path = 'Final_dataset.csv'  # Path to your dataset
+data = download_data()
 geojson_path = 'boston_neighborhoods.geojson'  # Path to GeoJSON file
-data = pd.read_csv(data_path, low_memory=False)
 geo_data = gpd.read_file(geojson_path)
 
 # Preprocess the data
