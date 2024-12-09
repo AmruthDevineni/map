@@ -5,7 +5,7 @@ import folium
 from streamlit_folium import st_folium
 
 # Load the new dataset
-data_path = 'Violations_neighbourhood_population.csv'  # Uploaded dataset
+data_path = 'Overall_Boston_violations.csv'  # Uploaded dataset
 geojson_path = 'boston_neighborhoods.geojson'  # Path to GeoJSON file (same as original)
 data = pd.read_csv(data_path, low_memory=False)
 geo_data = gpd.read_file(geojson_path)
