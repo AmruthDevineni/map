@@ -3,24 +3,15 @@ import pandas as pd
 import geopandas as gpd
 import folium
 from streamlit_folium import st_folium
-import gdown
 
-# Download the dataset from Google Drive
-@st.cache_data
-def download_data():
-    file_id = "1eYTqmer7-FVjU8NgkjrUM5cyhsazIRsc"
-    url = f"https://drive.google.com/uc?id={file_id}"
-    output = "Final_dataset.csv"
-    gdown.download(url, output, quiet=False)
-    return pd.read_csv(output)
-
-# Load the data
-data = download_data()
-geojson_path = 'boston_neighborhoods.geojson'  # Path to GeoJSON file
+# Load the new dataset
+data_path = 'Violations_neighbourhood_population.csv'  # Uploaded dataset
+geojson_path = 'boston_neighborhoods.geojson'  # Path to GeoJSON file (same as original)
+data = pd.read_csv(data_path, low_memory=False)
 geo_data = gpd.read_file(geojson_path)
 
 # Preprocess the data
-data['no_of_violations'] = pd.to_numeric(data['no_of_violations'], errors='coerce')  # Ensure violations are numeric
+data['count'] = pd.to_numeric(data['count'], errors='coerce')  # Ensure count is numeric
 data['year'] = data['year'].astype(str)  # Ensure year is a string
 
 # Streamlit Sidebar for Year Selection
@@ -33,13 +24,13 @@ if selected_years:
     filtered_data = data[data['year'].isin(selected_years)]
     aggregated_data = (
         filtered_data.groupby('Neighbourhood', as_index=False)
-        .agg({'no_of_violations': 'sum'})
+        .agg({'count': 'sum'})
     )
     
     # Merge Aggregated Data with GeoJSON
     merged_data = geo_data.merge(aggregated_data, left_on='neighborhood', right_on='Neighbourhood', how='left')
-    merged_data['no_of_violations'] = merged_data['no_of_violations'].fillna(0)
-
+    merged_data['count'] = merged_data['count'].fillna(0)
+    
     # Define Color Scale Function
     def get_color_scale(value):
         if value > 500:
@@ -57,12 +48,12 @@ if selected_years:
         folium.GeoJson(
             row['geometry'],
             style_function=lambda feature, row=row: {
-                'fillColor': get_color_scale(row['no_of_violations']),
+                'fillColor': get_color_scale(row['count']),
                 'color': 'black',
                 'weight': 0.5,
                 'fillOpacity': 0.7,
             },
-            tooltip=folium.Tooltip(f"{row['neighborhood']}: {row['no_of_violations']} violations"),
+            tooltip=folium.Tooltip(f"{row['neighborhood']}: {row['count']} violations"),
         ).add_to(boston_map)
 
     # Display the Map in Streamlit
