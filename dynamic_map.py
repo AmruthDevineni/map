@@ -4,13 +4,13 @@ import geopandas as gpd
 import folium
 from streamlit_folium import st_folium
 
-data_path = 'Overall_Boston_violations.csv' 
+data_path = 'Overall_Boston_violations.csv'
 geojson_path = 'boston_neighborhoods.geojson'
 data = pd.read_csv(data_path, low_memory=False)
 geo_data = gpd.read_file(geojson_path)
 
-data['count'] = pd.to_numeric(data['count'], errors='coerce') 
-data['year'] = data['year'].astype(str) 
+data['count'] = pd.to_numeric(data['count'], errors='coerce')
+data['year'] = data['year'].astype(str)
 
 st.sidebar.title("Year Selection")
 years = sorted(data['year'].dropna().unique())
@@ -19,38 +19,54 @@ selected_years = st.sidebar.multiselect("Select Year(s)", years, default=years[:
 if selected_years:
     filtered_data = data[data['year'].isin(selected_years)]
     aggregated_data = (
-        filtered_data.groupby('Neighbourhood', as_index=False)
+        filtered_data.groupby(['Neighbourhood', 'description'], as_index=False)
         .agg({'count': 'sum'})
     )
+    total_violations = (
+        aggregated_data.groupby('Neighbourhood', as_index=False)
+        .agg({'count': 'sum'})
+        .rename(columns={'count': 'total_count'})
+    )
     
-    merged_data = geo_data.merge(aggregated_data, left_on='neighborhood', right_on='Neighbourhood', how='left')
-    merged_data['count'] = merged_data['count'].fillna(0)
+    merged_data = geo_data.merge(total_violations, left_on='neighborhood', right_on='Neighbourhood', how='left')
+    merged_data['total_count'] = merged_data['total_count'].fillna(0)
+
+    category_summary = (
+        aggregated_data.groupby('Neighbourhood')['description', 'count']
+        .apply(lambda x: x.set_index('description').to_dict(orient='index'))
+    )
     
     multiplier = len(selected_years)
-    red_threshold = 100 * multiplier
-    orange_threshold = 50 * multiplier
+    red_threshold = 150 * multiplier
+    orange_threshold = 70 * multiplier
 
     def get_color_scale(value):
         if value > red_threshold:
-            return '#FF0000'
+            return '#FF0000' 
         elif value > orange_threshold:
-            return '#FFA500'
+            return '#FFA500' 
         elif value > 10 * multiplier:
-            return '#FFFF00'
+            return '#FFFF00' 
         else:
             return '#00FF00'
 
     boston_map = folium.Map(location=[42.3601, -71.0589], zoom_start=12, tiles='CartoDB positron')
     for _, row in merged_data.iterrows():
+        neighborhood_name = row['neighborhood']
+        categories = category_summary.get(neighborhood_name, {})
+        category_text = '<br>'.join([f"{cat}: {data['count']} violations" for cat, data in categories.items()])
+
         folium.GeoJson(
             row['geometry'],
             style_function=lambda feature, row=row: {
-                'fillColor': get_color_scale(row['count']),
+                'fillColor': get_color_scale(row['total_count']),
                 'color': 'black',
                 'weight': 0.5,
                 'fillOpacity': 0.7,
             },
-            tooltip=folium.Tooltip(f"{row['neighborhood']}: {row['count']} violations"),
+            tooltip=folium.Tooltip(
+                f"{row['neighborhood']}: {row['total_count']} total violations<br>{category_text}"
+            ),
         ).add_to(boston_map)
 
     st.title("Boston Neighborhood Violations")
