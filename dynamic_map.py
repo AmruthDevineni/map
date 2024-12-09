@@ -38,7 +38,7 @@ if selected_years:
     
     multiplier = len(selected_years)
     red_threshold = 150 * multiplier
-    orange_threshold = 75 * multiplier
+    orange_threshold = 50 * multiplier
 
     def get_color_scale(value):
         if value > red_threshold:
