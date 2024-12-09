@@ -45,7 +45,7 @@ if selected_years:
             return '#FF0000'
         elif value > orange_threshold:
             return '#FFA500'
-        elif value > 40 * multiplier:
+        elif value > 25 * multiplier:
             return '#FFFF00'
         else:
             return '#00FF00'
