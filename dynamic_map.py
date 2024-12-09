@@ -52,6 +52,8 @@ if selected_years:
 
     boston_map = folium.Map(location=[42.3601, -71.0589], zoom_start=12, tiles='CartoDB positron')
     for _, row in merged_data.iterrows():
+        if row['total_count'] == 0:
+            continue
         neighborhood_name = row['neighborhood']
         categories = category_summary.get(neighborhood_name, {})
         top_categories = list(categories.items())[:5]
