@@ -10,7 +10,7 @@ data = pd.read_csv(data_path, low_memory=False)
 geo_data = gpd.read_file(geojson_path)
 
 data['count'] = pd.to_numeric(data['count'], errors='coerce')
-data['year'] = data['year'].astype(str)
+data['year'] = data['year'].astype(str) 
 
 st.sidebar.title("Year Selection")
 years = sorted(data['year'].dropna().unique())
@@ -32,21 +32,21 @@ if selected_years:
     merged_data['total_count'] = merged_data['total_count'].fillna(0)
 
     category_summary = (
-        aggregated_data.groupby('Neighbourhood')['description', 'count']
+        aggregated_data.groupby('Neighbourhood')[['description', 'count']]
         .apply(lambda x: x.set_index('description').to_dict(orient='index'))
     )
     
     multiplier = len(selected_years)
-    red_threshold = 150 * multiplier
-    orange_threshold = 70 * multiplier
+    red_threshold = 100 * multiplier
+    orange_threshold = 50 * multiplier
 
     def get_color_scale(value):
         if value > red_threshold:
             return '#FF0000' 
         elif value > orange_threshold:
-            return '#FFA500' 
+            return '#FFA500'  
         elif value > 10 * multiplier:
-            return '#FFFF00' 
+            return '#FFFF00'  
         else:
             return '#00FF00'
 
@@ -54,7 +54,7 @@ if selected_years:
     for _, row in merged_data.iterrows():
         neighborhood_name = row['neighborhood']
         categories = category_summary.get(neighborhood_name, {})
-        category_text = '<br>'.join([f"{cat}: {data['count']} violations" for cat, data in categories.items()])
+        category_text = '<ul>' + ''.join([f"<li>{cat}: {data['count']} violations</li>" for cat, data in categories.items()]) + '</ul>'
 
         folium.GeoJson(
             row['geometry'],
@@ -65,7 +65,11 @@ if selected_years:
                 'fillOpacity': 0.7,
             },
             tooltip=folium.Tooltip(
-                f"{row['neighborhood']}: {row['total_count']} total violations<br>{category_text}"
+                f"""
+                <strong>{row['neighborhood']}: {row['total_count']} total violations</strong><br><br>
+                {category_text}
+                """,
+                sticky=True
             ),
         ).add_to(boston_map)
 
