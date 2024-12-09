@@ -6,7 +6,7 @@ from streamlit_folium import st_folium
 
 # Load the new dataset
 data_path = 'Overall_Boston_violations.csv'  # Uploaded dataset
-geojson_path = 'boston_neighborhoods.geojson'  # Path to GeoJSON file (same as original)
+geojson_path = 'boston_neighborhoods.geojson'  # Path to GeoJSON file
 data = pd.read_csv(data_path, low_memory=False)
 geo_data = gpd.read_file(geojson_path)
 
@@ -31,13 +31,18 @@ if selected_years:
     merged_data = geo_data.merge(aggregated_data, left_on='neighborhood', right_on='Neighbourhood', how='left')
     merged_data['count'] = merged_data['count'].fillna(0)
     
+    # Calculate Dynamic Color Thresholds
+    multiplier = len(selected_years)
+    red_threshold = 100 * multiplier
+    orange_threshold = 50 * multiplier
+
     # Define Color Scale Function
     def get_color_scale(value):
-        if value > 500:
+        if value > red_threshold:
             return '#FF0000'  # Red for high violations
-        elif value > 100:
+        elif value > orange_threshold:
             return '#FFA500'  # Orange for moderate violations
-        elif value > 10:
+        elif value > 10 * multiplier:
             return '#FFFF00'  # Yellow for low violations
         else:
             return '#00FF00'  # Green for very low violations
@@ -59,6 +64,7 @@ if selected_years:
     # Display the Map in Streamlit
     st.title("Boston Neighborhood Violations")
     st.write(f"Selected Years: {', '.join(selected_years)}")
+    st.write(f"Color Thresholds: Red > {red_threshold}, Orange > {orange_threshold}, Yellow > {10 * multiplier}")
     st_folium(boston_map, width=700, height=500)
 else:
     st.write("Please select at least one year to display the map.")
