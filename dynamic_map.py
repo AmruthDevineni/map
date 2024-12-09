@@ -68,8 +68,8 @@ if selected_years:
             tooltip=folium.Tooltip(
                 f"""
                 <strong>{row['neighborhood']}: {row['total_count']} total violations</strong><br><br>
+                <strong>Top 5 violations are:</strong><br>
                 {category_text}
-                <em>...and more</em> if applicable.
                 """,
                 sticky=True
             ),
